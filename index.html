@@ -1,0 +1,149 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>قلعة النجوم</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;overflow:hidden;background:#87ceeb;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;font-size:22px;font-weight:700;color:#fff;text-shadow:0 2px 4px #0008;pointer-events:none}
+#flash{position:fixed;inset:0;background:#ef4444;opacity:0;pointer-events:none;transition:opacity .15s}
+#joy{position:fixed;left:24px;bottom:calc(32px + env(safe-area-inset-bottom,0px));width:130px;height:130px;border-radius:50%;background:#ffffff40;border:3px solid #ffffff90}
+#knob{position:absolute;left:35px;top:35px;width:60px;height:60px;border-radius:50%;background:#ffffffcc;box-shadow:0 2px 6px #0006}
+#ov,.scr{position:fixed;inset:0;background:#1b2a4acc;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;padding:24px;gap:14px}
+#ov h1,.scr h1{margin:0;font-size:34px}#ov p,.scr p{margin:0;font-size:18px;line-height:1.6;max-width:320px}
+button{font:inherit;font-size:22px;font-weight:700;padding:12px 40px;border:0;border-radius:30px;background:#fbbf24;color:#3b2a00}
+[hidden]{display:none!important}
+.scr{z-index:5}#ov{z-index:4}
+.scr button{width:250px}
+.sec{background:#ffffff30!important;color:#fff!important;border:2px solid #ffffff60!important}
+#bPause{position:fixed;top:calc(48px + env(safe-area-inset-top,0px));left:12px;width:44px;height:44px;padding:0;font-size:20px;border-radius:50%;background:#ffffff60;color:#fff;display:none}
+.row{display:flex;justify-content:space-between;align-items:center;width:280px;font-size:18px}
+.row input[type=range]{width:130px}.row input[type=checkbox]{width:24px;height:24px}
+select{font:inherit;padding:4px 8px;border-radius:8px}
+</style></head><body>
+<div id="hud"><span id="st">⭐ 0/4</span><span id="lvl">المرحلة 1</span><span id="lv">❤️❤️❤️</span></div>
+<div id="flash"></div><div id="joy"><div id="knob"></div></div>
+<div id="ov" style="display:none"><div style="font-size:56px">🏰</div><h1>قلعة النجوم</h1>
+<p id="msg">ادخل من باب القلعة، اجمع النجوم وتجنّب الأشباح 👻 وأنهِ 5 مراحل، كل مرحلة أصعب!<br>العصا للحركة، واسحب بإصبعك على الشاشة للنظر حولك</p>
+<button id="go">ابدأ</button></div>
+<div id="scrMenu" class="scr"><div style="font-size:64px">🏰</div><h1>قلعة النجوم</h1><p>ادخل القلعة، اجمع النجوم وتجنّب الأشباح 👻</p>
+<button id="bPlay">▶ ابدأ اللعب</button><button id="bSet" class="sec">⚙ الإعدادات</button><button id="bExit" class="sec">✖ خروج</button></div>
+<div id="scrSet" class="scr" hidden><h1>⚙ الإعدادات</h1>
+<label class="row">حساسية النظر<input id="sSens" type="range" min=".4" max="2" step=".1"></label>
+<label class="row">الصوت<input id="sSnd" type="checkbox"></label>
+<label class="row">اهتزاز الكاميرا<input id="sBob" type="checkbox"></label>
+<label class="row">عكس النظر عمودياً<input id="sInv" type="checkbox"></label>
+<label class="row">جودة الرسوم<select id="sQ"><option value="1">عالية</option><option value="0">منخفضة</option></select></label>
+<button id="bBack">رجوع</button></div>
+<div id="scrBye" class="scr" hidden><div style="font-size:64px">👋</div><h1>شكراً للعب!</h1><p>يمكنك إغلاق التبويب الآن</p><button id="bBye">القائمة الرئيسية</button></div>
+<div id="scrPause" class="scr" hidden><h1>⏸ إيقاف مؤقت</h1><button id="bRes">استئناف</button><button id="bSet2" class="sec">⚙ الإعدادات</button><button id="bHome" class="sec">القائمة الرئيسية</button></div>
+<button id="bPause">⏸</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);document.body.prepend(R.domElement);
+const S=new THREE.Scene();S.background=new THREE.Color(0x87ceeb);S.fog=new THREE.Fog(0x87ceeb,35,80);
+const cam=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,120);
+S.add(new THREE.HemisphereLight(0xffffff,0x557744,.95));
+const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(10,20,8);S.add(sun);
+const M=c=>new THREE.MeshLambertMaterial({color:c});
+const box=(w,h,d,c,x,y,z,p=S)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);p.add(m);return m};
+box(120,.2,120,0x5fa84a,0,-.1,0);
+box(13,.1,13,0xc9b99a,0,.03,0);
+box(3,.06,14,0x9a8a6a,0,.04,14);
+// الجدران x,z,w,d
+const H=3,walls=[[0,-6,14,1],[-6,0,1,14],[6,0,1,14],[-4,6,5,1],[4,6,5,1]];
+const stone=0x9ca3af;
+walls.forEach(([x,z,w,d])=>{box(w,H,d,stone,x,H/2,z);const n=Math.floor(Math.max(w,d)/1.5);
+ for(let i=0;i<n;i++){const t=(i+.5)/n-.5;if(w>d)box(.8,.7,d,stone,x+t*w,H+.35,z);else box(w,.7,.8,stone,x,H+.35,z+t*d)}});
+[[-6.5,-6.5],[6.5,-6.5],[-6.5,6.5],[6.5,6.5]].forEach(([x,z])=>{walls.push([x,z,2.4,2.4]);
+ const t=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.3,6,12),M(0xb6bcc6));t.position.set(x,3,z);S.add(t);
+ const c=new THREE.Mesh(new THREE.ConeGeometry(1.6,2,12),M(0xdc2626));c.position.set(x,7,z);S.add(c)});
+box(3,1,1,stone,0,H-.5,6); // عتبة الباب
+const door=new THREE.Group();door.position.set(-1.5,0,6);S.add(door);
+box(3,2.5,.3,0x7c4a1e,1.5,1.25,0,door);box(.25,.25,.25,0xfbbf24,2.6,1.2,.25,door);
+// الشخصية
+const pl=new THREE.Group();S.add(pl);
+box(.8,.9,.5,0x3b82f6,0,1.05,0,pl);box(.6,.6,.6,0xffd1a1,0,1.8,0,pl);
+box(.1,.1,.05,0x111111,-.15,1.85,.31,pl);box(.1,.1,.05,0x111111,.15,1.85,.31,pl);
+box(.75,.25,.75,0xef4444,0,2.2,0,pl);box(.4,.3,.4,0xef4444,0,2.45,0,pl);
+const limb=(w,h,c,x,y)=>{const g=new THREE.Group();g.position.set(x,y,0);box(w,h,w,c,0,-h/2,0,g);pl.add(g);return g};
+const lL=limb(.3,.7,0x1e3a8a,-.2,.7),lR=limb(.3,.7,0x1e3a8a,.2,.7),aL=limb(.25,.8,0xffd1a1,-.55,1.5),aR=limb(.25,.8,0xffd1a1,.55,1.5);
+// نجوم وأشباح
+const stars=[],ghosts=[];
+for(let i=0;i<12;i++){const s=new THREE.Mesh(new THREE.OctahedronGeometry(.5),M(0xfbbf24));S.add(s);stars.push(s)}
+for(let i=0;i<5;i++){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.SphereGeometry(.6,12,10),M(0xf8fafc));b.position.y=1;g.add(b);
+ box(.15,.2,.1,0x111111,-.2,1.1,.5,g);box(.15,.2,.1,0x111111,.2,1.1,.5,g);S.add(g);g.v=new THREE.Vector3();ghosts.push(g)}
+let got,lives,inv,run=false,level=1,after="start",N=4,yaw=0,pitch=0,mode="menu";cam.rotation.order="YXZ";
+const LV=[{s:4,g:1,sp:1.8},{s:6,g:2,sp:2.2},{s:8,g:3,sp:2.6},{s:10,g:4,sp:3},{s:12,g:5,sp:3.4}];
+function reset(){const c=LV[level-1],G=c.g;N=c.s;got=0;lives=3;inv=0;yaw=0;pitch=0;pl.position.set(0,0,14);
+ stars.forEach((s,i)=>{s.visible=i<N;const a=i/N*6.283+.4,r=i%2?2:4.2;s.position.set(Math.cos(a)*r,1.1,Math.sin(a)*r)});
+ ghosts.forEach((g,i)=>{g.visible=i<G;g.position.set((i-(G-1)/2)*2.2,0,-2+(i%2)*3);const a=Math.random()*6.28;g.v.set(Math.cos(a)*c.sp,0,Math.sin(a)*c.sp)});hud()}
+function hud(){st.textContent='⭐ '+got+'/'+N;lvl.textContent='المرحلة '+level;lv.textContent='❤️'.repeat(lives)||'💔'}
+function collide(p){for(const[cx,cz,w,d]of walls){const qx=Math.max(cx-w/2,Math.min(p.x,cx+w/2)),qz=Math.max(cz-d/2,Math.min(p.z,cz+d/2));
+ let dx=p.x-qx,dz=p.z-qz,l=Math.hypot(dx,dz);if(l<.45){if(l<1e-4){dz=1;l=1}p.x=qx+dx/l*.45;p.z=qz+dz/l*.45}}}
+// التحكم
+let jx=0,jz=0,pid=null;const keys={};
+const joy=document.getElementById('joy'),knob=document.getElementById('knob');
+function jm(e){const r=joy.getBoundingClientRect();let dx=e.clientX-(r.left+65),dy=e.clientY-(r.top+65);const l=Math.hypot(dx,dy),m=55;if(l>m){dx*=m/l;dy*=m/l}
+ knob.style.transform=`translate(${dx}px,${dy}px)`;jx=dx/m;jz=dy/m}
+joy.addEventListener('pointerdown',e=>{pid=e.pointerId;joy.setPointerCapture(pid);jm(e)});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===pid)jm(e)});
+const je=e=>{if(e.pointerId===pid){pid=null;jx=jz=0;knob.style.transform=''}};
+joy.addEventListener('pointerup',je);joy.addEventListener('pointercancel',je);
+let lid=null,lx=0,ly=0;const cv=R.domElement;
+cv.addEventListener('pointerdown',e=>{lid=e.pointerId;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(lid)});
+cv.addEventListener('pointermove',e=>{if(e.pointerId!==lid)return;yaw-=(e.clientX-lx)*.006*cfg.sens;pitch=Math.max(-.7,Math.min(.7,pitch-(e.clientY-ly)*.004*cfg.sens*(cfg.inv?-1:1)));lx=e.clientX;ly=e.clientY});
+const le=e=>{if(e.pointerId===lid)lid=null};cv.addEventListener('pointerup',le);cv.addEventListener('pointercancel',le);
+addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+function end(t,b,a){after=a;run=false;mode='over';msg.innerHTML=t;go.textContent=b;ov.style.display='flex'}
+go.onclick=()=>{if(after=='next')level++;else if(after=='restart')level=1;reset();ov.style.display='none';run=true;mode='play'};
+addEventListener('resize',()=>{R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()});
+reset();
+const cfg={sens:1,snd:1,bob:1,hq:1,inv:0};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('castleCfg')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('castleCfg',JSON.stringify(cfg))}catch(e){}};
+let AC;function beep(f,d=.12){if(!cfg.snd)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(t+d)}catch(e){}}
+const $=id=>document.getElementById(id);
+const scr=n=>['scrMenu','scrSet','scrBye','scrPause'].forEach(k=>$(k).hidden=k!==n);
+let from='scrMenu';
+$('sSens').value=cfg.sens;$('sSnd').checked=!!cfg.snd;$('sBob').checked=!!cfg.bob;$('sInv').checked=!!cfg.inv;$('sQ').value=cfg.hq?'1':'0';
+function applyQ(){R.setPixelRatio(cfg.hq?Math.min(devicePixelRatio,2):1);R.setSize(innerWidth,innerHeight)}applyQ();
+$('sSens').oninput=e=>{cfg.sens=+e.target.value;save()};
+$('sSnd').onchange=e=>{cfg.snd=e.target.checked?1:0;save();beep(660)};
+$('sBob').onchange=e=>{cfg.bob=e.target.checked?1:0;save()};
+$('sInv').onchange=e=>{cfg.inv=e.target.checked?1:0;save()};
+$('sQ').onchange=e=>{cfg.hq=+e.target.value;save();applyQ()};
+$('bPlay').onclick=()=>{level=1;after='start';reset();scr(null);ov.style.display='none';run=true;mode='play';beep(660)};
+$('bSet').onclick=()=>{from='scrMenu';scr('scrSet')};
+$('bSet2').onclick=()=>{from='scrPause';scr('scrSet')};
+$('bBack').onclick=()=>scr(from);
+$('bExit').onclick=()=>{scr('scrBye');try{window.close()}catch(e){}};
+$('bBye').onclick=()=>scr('scrMenu');
+$('bPause').onclick=()=>{if(!run)return;run=false;mode='pause';scr('scrPause')};
+$('bRes').onclick=()=>{scr(null);run=true;mode='play'};
+$('bHome').onclick=()=>{run=false;mode='menu';ov.style.display='none';scr('scrMenu')};
+scr('scrMenu');
+let last=performance.now(),tm=0;
+function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;tm+=dt;
+ let x=jx+(keys.d?1:0)-(keys.a?1:0),z=jz+(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);yaw+=((keys.arrowleft?1:0)-(keys.arrowright?1:0))*2*dt;
+ const l=Math.hypot(x,z);if(l>1){x/=l;z/=l}
+ const moving=run&&l>.1;
+ if(moving){const cy=Math.cos(yaw),sy=Math.sin(yaw);pl.position.x+=(x*cy+z*sy)*6*dt;pl.position.z+=(-x*sy+z*cy)*6*dt;collide(pl.position);
+  pl.position.x=Math.max(-25,Math.min(25,pl.position.x));pl.position.z=Math.max(-25,Math.min(25,pl.position.z));
+  pl.rotation.y=Math.atan2(x,z);const s=Math.sin(tm*12)*.7;lL.rotation.x=s;lR.rotation.x=-s;aL.rotation.x=-s;aR.rotation.x=s}
+ else{lL.rotation.x=lR.rotation.x=aL.rotation.x=aR.rotation.x=0}
+ const near=Math.hypot(pl.position.x,pl.position.z-6)<5;door.rotation.y+=((near?1.5:0)-door.rotation.y)*Math.min(1,dt*6);
+ stars.forEach(s=>{s.rotation.y+=dt*2;s.position.y=1.1+Math.sin(tm*3+s.position.x)*.15;
+  if(run&&s.visible&&s.position.distanceTo(new THREE.Vector3(pl.position.x,1,pl.position.z))<1){s.visible=false;got++;beep(880);hud();if(got>=N){if(level<5)end('🎉 أنهيت المرحلة '+level+'!<br>استعد للمرحلة '+(level+1),'المرحلة التالية','next');else end('🏆 مبروك! أنهيت كل المراحل','العب من البداية','restart')}}});
+ inv=Math.max(0,inv-dt);pl.visible=false;flash.style.opacity=inv>0?.3:0;
+ ghosts.forEach(g=>{if(!g.visible)return;if(run){g.position.addScaledVector(g.v,dt);
+  ['x','z'].forEach(k=>{if(Math.abs(g.position[k])>4.8){g.position[k]=Math.sign(g.position[k])*4.8;g.v[k]*=-1}})}
+  g.position.y=Math.sin(tm*3+g.id)*.2;g.rotation.y=Math.atan2(g.v.x,g.v.z);
+  if(run&&inv<=0&&Math.hypot(g.position.x-pl.position.x,g.position.z-pl.position.z)<1.1){lives--;beep(150,.3);inv=2;pl.position.set(0,0,14);hud();if(lives<=0)end('👻 أمسكتك الأشباح!','أعد المرحلة '+level,'retry')}});
+ if(mode==='menu'){const a=tm*.25;cam.position.set(Math.cos(a)*22,10,Math.sin(a)*22);cam.lookAt(0,2,0)}else{cam.position.set(pl.position.x,1.6+(moving&&cfg.bob?Math.sin(tm*12)*.05:0),pl.position.z);cam.rotation.set(pitch,yaw,0)}$('bPause').style.display=run?'block':'none';R.render(S,cam)}
+requestAnimationFrame(loop);
+</script></body></html>
+
+</body></html>
